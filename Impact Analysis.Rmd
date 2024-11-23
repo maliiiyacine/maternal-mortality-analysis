@@ -1,0 +1,449 @@
+---
+title: "Understanding Maternal Mortality in America"
+author: "Malika Dosso"
+date: "2024-10-21"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA)
+```
+
+
+\Research Findings: US Maternal Mortality Analysis (2019-2024)
+
+## 1. Overall Statistical Overview
+* Complete Study Period Average: 22.97 deaths per 100,000 live births
+* Range Analysis:
+  - Absolute Minimum: 17.3 deaths per 100,000 live births (Pre-COVID)
+  - Absolute Maximum: 33.8 deaths per 100,000 live births (February 2022)
+  - Total Span: Initial rate 17.4 to final rate 19.6
+* Volatility Measures:
+  - Pre-COVID SD: 1.04
+  - COVID Era SD: 4.67
+  - Post-Dobbs SD: Variable (showing declining trend)
+
+## 2. Pre-COVID Period (2019-March 2020) 
+Baseline Period Characteristics:
+* Duration: 14 months
+* Statistical Measures:
+  - Mean Rate: 18.9 deaths per 100,000 live births
+  - Standard Deviation: 1.04 (most stable period)
+  - Range: 17.3-20.1
+* Healthcare Metrics:
+  - Average Monthly Deaths: 712
+  - Average Monthly Births: 3,761,836
+* Trend Analysis:
+  - Steady increase of 13.8% over period
+  - Most consistent period with predictable patterns
+  - Established baseline for comparison
+
+## 3. COVID Era (March 2020-June 2022)
+Peak Period Analysis:
+* Duration: 27 months
+* Critical Statistics:
+  - Mean Rate: 26.4 deaths per 100,000 live births
+  - Peak Rate: 33.8 (February 2022)
+  - Standard Deviation: 4.67 (highest volatility)
+* Impact Metrics: 
+  - Total Increase: 57.7%
+  - Average Monthly Deaths: 962 (250 more than pre-COVID)
+  - Average Monthly Births: 3,648,065 (decline of 113,771)
+* Pattern Analysis:
+  - Consistent upward trend
+  - Highest volatility in rates
+  - Significant monthly variations
+
+## 4. Post-Dobbs Period (June 2022-Present)
+Transition and Recovery Phase:
+* Duration: 25 months
+* Key Metrics:
+  - Mean Rate: 21.6 deaths per 100,000 live births
+  - Initial Rate: 32.1
+  - Final Rate: 19.6
+  - Total Decline: 38.9%
+* Volume Statistics:
+  - Average Monthly Deaths: 786
+  - Average Monthly Births: 3,639,959
+* Trend Analysis:
+  - Consistent downward trend
+  - Moving toward pre-COVID levels
+  - Stabilizing patterns emerging
+
+## 5. Racial Disparity Analysis
+Detailed Breakdown by Race/Ethnicity:
+
+American Indian/Alaska Native:
+* Highest Overall Rates:
+  - COVID Era Mean: 98.2
+  - Post-Dobbs Mean: 86.5
+  - Disparity Ratio: 3.90x higher than White rate
+
+Black, Non-Hispanic:
+* Consistently Second Highest:
+  - COVID Era Mean: 59.0
+  - Post-Dobbs Mean: 51.3
+  - Disparity Ratio: 2.78x higher than White rate
+
+White, Non-Hispanic (Reference Group):
+* Baseline Metrics:
+  - COVID Era Mean: 21.4
+  - Post-Dobbs Mean: 17.6
+  - Used as reference for disparity calculations
+
+Hispanic:
+* Variable Patterns:
+  - COVID Era Mean: 21.0
+  - Post-Dobbs Mean: 15.9
+  - Disparity Ratio: 0.973x (near parity with White rate)
+
+Asian, Non-Hispanic:
+* Consistently Lowest Rates:
+  - COVID Era Mean: 14.2
+  - Post-Dobbs Mean: 12.8
+  - Disparity Ratio: 0.666x lower than White rate
+
+## 6. Annual Progression Analysis
+Yearly Rate Changes:
+* 2019: 18.8 (Baseline Year)
+  - Stable patterns
+  - Pre-pandemic normal
+* 2020: 21.4
+  - Increase: 14.2%
+  - Initial COVID impact
+* 2021: 27.5
+  - Increase: 28.1%
+  - Peak COVID impact
+* 2022: 29.5
+  - Increase: 7.34%
+  - Transition year (COVID/Dobbs)
+* 2023: 19.7
+  - Decrease: 33.3%
+  - Major recovery period
+* 2024: 19.0
+  - Decrease: 3.09%
+  - Continuing stabilization
+
+## 7. Birth Rate Trends
+Longitudinal Birth Analysis:
+* Pre-COVID Average: 3,761,836
+  - Highest birth rates
+  - Stable patterns
+* COVID Era Average: 3,648,065
+  - Decline of 113,771 births
+  - Consistent decrease
+* Post-Dobbs Average: 3,639,959
+  - Further slight decline
+  - Minimal change from COVID era
+  
+  
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+```{r}
+VSRR_MM <- read.csv("~/Downloads/VSRR_Provisional_Maternal_Death_Counts_and_Rates.csv")
+```
+
+```{r}
+head(VSRR_MM)
+str(VSRR_MM)
+summary(VSRR_MM)
+names(VSRR_MM)
+colSums(is.na(VSRR_MM))
+```
+
+```{r}
+# Cleaning and formatting the data
+VSRR_MM_clean <- VSRR_MM %>%
+  # Converting character numbers to numeric
+  mutate(
+    # Removing commas and converting to numeric
+    Maternal.Deaths = as.numeric(gsub(",", "", Maternal.Deaths)),
+    Live.Births = as.numeric(gsub(",", "", Live.Births)),
+    # Creating proper date from Month.Ending.Date
+    Date = mdy(Month.Ending.Date)
+  ) %>%
+  # Filter Total group and subgroup to avoid duplicates
+  filter(Group == "Total" & Subgroup == "Total") %>%
+  # Arranging by date
+  arrange(Date)
+
+head(VSRR_MM_clean)
+
+# Structure of cleaned data
+str(VSRR_MM_clean)
+```
+
+```{r}
+# Trend plot to verify data
+ggplot(VSRR_MM_clean, aes(x = Date, y = Maternal.Mortality.Rate)) +
+  geom_line() + geom_point() + theme_minimal() + 
+  labs(title = "US Maternal Mortality Rate Over Time", x = "Date", 
+       y = "Deaths per 100,000 live births")
+
+
+```
+
+```{r}
+# Calculating basic statistics
+summary_stats <- VSRR_MM_clean %>%
+  summarise( avg_rate = mean(Maternal.Mortality.Rate, na.rm = TRUE),
+             min_rate = min(Maternal.Mortality.Rate, na.rm = TRUE),
+             max_rate = max(Maternal.Mortality.Rate, na.rm = TRUE),
+             start_rate = first(Maternal.Mortality.Rate),
+             end_rate = last(Maternal.Mortality.Rate))
+
+summary_stats
+```
+
+```{r}
+# Time period labels
+VSRR_MM_analysis <- VSRR_MM_clean %>%
+  mutate(
+    period = case_when(
+      Date < as.Date("2020-03-01") ~ "Pre-COVID",
+      Date >= as.Date("2020-03-01") & Date < as.Date("2022-06-24") ~ "COVID Era",
+      Date >= as.Date("2022-06-24") ~ "Post-Dobbs",
+      TRUE ~ "Other"
+    )
+  )
+
+head(VSRR_MM_analysis)
+```
+
+```{r}
+# Trend plot with periods
+ggplot(VSRR_MM_analysis, aes(x = Date, y = Maternal.Mortality.Rate)) +
+  geom_line(size = 1, color = "blue") +
+  geom_point(size = 2, color = "blue") +
+  # Period shading
+  annotate("rect", 
+           xmin = as.Date("2020-03-01"), 
+           xmax = as.Date("2022-06-24"),
+           ymin = -Inf, ymax = Inf,
+           alpha = 0.2, fill = "red") +
+  annotate("text", x = as.Date("2021-01-01"), y = 15,
+           label = "COVID-19 Era\nHighest mortality 
+           rates\nPeak: 33.8 deaths per 100,000",
+           size = 3) +
+  # Trend highlights
+  geom_hline(yintercept = 18.9, linetype = "dashed", color = "gray50") +
+  annotate("text", x = as.Date("2019-06-01"), y = 19.5,
+           label = "Pre-COVID Average: 18.9", size = 3) +
+  theme_minimal() +
+  labs(
+    title = "U.S. Maternal Mortality Rate Shows Dramatic COVID-19 Impact",
+    subtitle = "Deaths per 100,000 live births increased 
+    significantly during pandemic",
+    x = "Year",
+    y = "Deaths per 100,000 Live Births",
+    caption = "Source: CDC National Center for Health Statistics\nNote: 
+    Shaded area represents COVID-19 period"
+  )
+```
+
+```{r}
+# Statistics by period
+period_stats <- VSRR_MM_analysis %>% group_by(period) %>% 
+  summarise(avg_rate = mean(Maternal.Mortality.Rate, na.rm = TRUE), 
+            min_rate = min(Maternal.Mortality.Rate, na.rm = TRUE),
+            max_rate = max(Maternal.Mortality.Rate, na.rm = TRUE),
+            num_months = n()) %>% arrange(min_rate)
+
+# Percent changes between periods
+changes <- VSRR_MM_analysis %>% group_by(period) %>% 
+  summarise(start_rate = first(Maternal.Mortality.Rate),
+            end_rate = last(Maternal.Mortality.Rate),
+            total_change = end_rate - start_rate,
+            percent_change = ((end_rate - start_rate) / start_rate) * 100)
+
+
+# Statistics by Period
+period_stats
+
+# Changes within Each Period
+changes
+
+# Peak analysis
+peak_analysis <- VSRR_MM_analysis %>% 
+  filter(Maternal.Mortality.Rate == max(Maternal.Mortality.Rate)) %>% 
+  select(Date, Maternal.Mortality.Rate, period)
+
+#Peak Mortality Rate
+peak_analysis
+```
+
+```{r}
+# More detailed trend analysis
+ggplot(VSRR_MM_analysis, aes(x = Date, y = Maternal.Mortality.Rate)) +
+  # Trend lines for each period
+  geom_smooth(aes(color = period), method = "lm", se = FALSE) + 
+  geom_line(size = 1) + geom_point(aes(color = period), size = 2) +
+  # Period-specific average lines
+  geom_hline(data = period_stats, 
+             aes(yintercept = avg_rate, color = period),
+             linetype = "dashed", alpha = 0.5) +
+  # Peak point Highlighted
+  geom_point(data = peak_analysis, 
+             aes(x = Date, y = Maternal.Mortality.Rate),
+             color = "red", size = 4) +
+  
+  # Vertical lines for key events
+  geom_vline(xintercept = as.Date("2020-03-01"),
+             linetype = "dashed", color = "gray4") +
+  geom_vline(xintercept = as.Date("2022-06-24"),
+             linetype = "dashed", color = "gray4") + theme_minimal() +
+  theme(legend.position = "bottom", 
+        plot.title = element_text(size = 14, face = "bold"), 
+        plot.subtitle = element_text(size = 12), 
+        axis.title = element_text(size = 11)) + 
+  labs(title = "US Maternal Mortality Rate: Three Distinct Periods",
+    subtitle = paste("Peak of", 
+                     round(max
+                           (VSRR_MM_analysis$Maternal.Mortality.Rate, na.rm = 
+                               TRUE), 1), 
+                    "deaths per 100,000 live births reached during COVID Era"),
+    x = "Date", y = "Deaths per 100,000 live births", color = "Period", 
+    caption = "Source: CDC National Center for Health Statistics")
+```
+
+```{r}
+# Yearly averages and changes
+yearly_stats <- VSRR_MM_analysis %>% mutate(year = year(Date)) %>%
+  group_by(year) %>% summarise(avg_rate = mean(Maternal.Mortality.Rate, 
+                                               na.rm = TRUE), 
+                               min_rate = min(Maternal.Mortality.Rate, 
+                                              na.rm = TRUE),
+    max_rate = max(Maternal.Mortality.Rate, na.rm = TRUE)
+  ) %>% mutate(year_over_year_change = avg_rate - lag(avg_rate), 
+               percent_change = (avg_rate - lag(avg_rate))/lag(avg_rate) * 100)
+
+yearly_stats
+
+# Key statistics for each period
+period_analysis <- VSRR_MM_analysis %>% group_by(period) %>% 
+  summarise(duration_months = n(), 
+            avg_deaths = mean(Maternal.Deaths, na.rm = TRUE), 
+            avg_births = mean(Live.Births, na.rm = TRUE), 
+            peak_rate = max(Maternal.Mortality.Rate, na.rm = TRUE), 
+            lowest_rate = min(Maternal.Mortality.Rate, na.rm = TRUE), 
+            rate_volatility = sd(Maternal.Mortality.Rate, na.rm = TRUE)) %>% 
+  mutate(deaths_per_month = avg_deaths/duration_months, 
+         births_per_month = avg_births/duration_months)
+
+period_analysis
+
+```
+
+```{r}
+VSRR_MM_race <- VSRR_MM %>%
+  # Filter for Race and Hispanic origin group
+  filter(`Group` == "Race and Hispanic origin") %>%
+  # Remove any rows with suppressed or missing data
+  filter(!is.na(Maternal.Mortality.Rate)) %>%
+  mutate(
+    # Clean numeric columns
+    Maternal.Deaths = as.numeric(gsub(",", "", Maternal.Deaths)),
+    Live.Births = as.numeric(gsub(",", "", Live.Births)),
+    Date = mdy(Month.Ending.Date),
+    # Add period labels
+    period = case_when(
+      Date < as.Date("2020-03-01") ~ "Pre-COVID",
+      Date >= as.Date("2020-03-01") & Date < as.Date("2022-06-24") ~ "COVID Era",
+      Date >= as.Date("2022-06-24") ~ "Post-Dobbs",
+      TRUE ~ "Other"
+    )
+  )
+
+head(VSRR_MM_race)
+```
+
+```{r}
+# Statistics by period and race/ethnicity
+racial_stats <- VSRR_MM_race %>%
+  group_by(period, Subgroup) %>%
+  summarise(
+    mean_rate = mean(Maternal.Mortality.Rate, na.rm = TRUE),
+    median_rate = median(Maternal.Mortality.Rate, na.rm = TRUE),
+    min_rate = min(Maternal.Mortality.Rate, na.rm = TRUE),
+    max_rate = max(Maternal.Mortality.Rate, na.rm = TRUE),
+    sd_rate = sd(Maternal.Mortality.Rate, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(period, desc(mean_rate))
+
+# Disparities using reframe
+disparity_calc <- VSRR_MM_race %>%
+  group_by(Date, period) %>%
+  reframe(
+    Subgroup = Subgroup,
+    Mortality_Rate = Maternal.Mortality.Rate,
+    White_Rate = Maternal.Mortality.Rate[Subgroup == "White, Non-Hispanic"],
+    Relative_Disparity = Maternal.Mortality.Rate / 
+      Maternal.Mortality.Rate[Subgroup == "White, Non-Hispanic"]
+  ) %>%
+  filter(Subgroup != "White, Non-Hispanic") # Remove reference group
+
+head(racial_stats)
+head(disparity_calc)
+```
+
+```{r}
+ggplot(VSRR_MM_race, aes(x = Date, y = Maternal.Mortality.Rate,
+color = Subgroup)) + geom_line(linewidth = 1) +
+geom_point(size = 2, alpha = 0.6) +
+geom_vline(xintercept = as.Date("2020-03-01"),
+linetype = "dashed", color = "gray4", alpha = 0.5) +
+geom_vline(xintercept = as.Date("2022-06-24"),
+linetype = "dashed", color = "gray4", alpha = 0.5) +
+annotate("text", x = as.Date("2020-01-15"),
+y = max(VSRR_MM_race$Maternal.Mortality.Rate, na.rm = TRUE),
+label = "COVID-19 Start", angle = 90, vjust = -0.5) +
+annotate("text", x = as.Date("2022-05-15"),
+y = max(VSRR_MM_race$Maternal.Mortality.Rate, na.rm = TRUE),
+label = "Dobbs Decision", angle = 90, vjust = -0.5) +
+theme_minimal() + theme(legend.position = "right", plot.title =
+element_text(size = 14, face = "bold"),
+plot.subtitle = element_text(size = 12),
+axis.text.x = element_text(angle = 45, hjust = 1)) +
+labs(
+title = "Maternal Mortality Rates by Race and Ethnicity",
+subtitle = "Trends across COVID-19 and Dobbs decision periods (2019-2024)",
+x = "Date",
+y = "Deaths per 100,000 live births",
+color = "Race/Ethnicity"
+) 
+
+
+```
+
+```{r}
+# Statistics by period and race/ethnicity
+disparity_summary <- disparity_calc %>%
+  group_by(period, Subgroup) %>%
+  summarise(
+    mean_disparity = mean(Relative_Disparity, na.rm = TRUE),
+    median_disparity = median(Relative_Disparity, na.rm = TRUE),
+    min_disparity = min(Relative_Disparity, na.rm = TRUE),
+    max_disparity = max(Relative_Disparity, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(period, desc(mean_disparity))
+
+head(disparity_summary)
+
+# Period comparison with proper grouping
+period_comparison <- racial_stats %>%
+  select(period, Subgroup, mean_rate, max_rate) %>%
+  pivot_wider(
+    id_cols = Subgroup,
+    names_from = period,
+    values_from = c(mean_rate, max_rate)
+  )
+
+head(period_comparison)
+```
+
+
+
