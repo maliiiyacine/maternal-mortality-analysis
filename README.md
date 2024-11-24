@@ -14,7 +14,7 @@ Data Visualization using ggplot2
 CDC Data Analysis
 
 Current Status:
-Project in development - Analyzing trends and patterns in maternal mortality rates across different demographic groups and time periods.
+Project in development - Analyzing trends and patterns in maternal mortality rates across different demographic groups and States.
 
 Data Source:
 CDC National Center for Health Statistics: Provisional Maternal Death Counts and Rates
